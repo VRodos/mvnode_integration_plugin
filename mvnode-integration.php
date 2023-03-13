@@ -4,7 +4,7 @@
  * Plugin Name: MVNode Integration
  * Description: This plugin is required for SSO between the Mediaverse Nodes and the VRodos component
  * Version: 3.0
- * Author: Vicky CERTH, Sofia Kostoglou, Anastasios Papazoglou Chalikias
+ * Author: Vicky CERTH, Sofia Kostoglou, Anastasios Papazoglou Chalikias, Elias Kouslis
  * Author URI: https://iti.gr
  **/
 
@@ -647,7 +647,15 @@ function save_assets($token)
 
             // the following lines write the contents to a file in the same directory (provided permissions etc)
             if (!file_exists($upload_path . $output_filename)) {
-                $fp = fopen($upload_path . $output_filename, 'w');
+
+                $dirname = dirname($upload_path . $output_filename);
+                if (!is_dir($dirname))
+                {
+                    mkdir($dirname, 0755, true);
+                }
+                $fp = fopen($dirname, 'w');
+
+
                 fwrite($fp, $result);
                 fclose($fp);
                 echo "2";
