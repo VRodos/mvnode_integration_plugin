@@ -365,10 +365,10 @@ function verify_username_password($user, $email, $password)
             //$token = complete_registration($user->user_login, $password, $email, $user->user_nicename, ' - ', '1990-01-01');
 
             // if (!$token) {
-                wp_clear_auth_cookie();
-                wp_set_current_user($user->data->ID);
-                wp_set_auth_cookie($user->data->ID);
-                wp_safe_redirect(admin_url(), 302, 'Third-Party SDK');
+            wp_clear_auth_cookie();
+            wp_set_current_user($user->data->ID);
+            wp_set_auth_cookie($user->data->ID);
+            wp_safe_redirect(admin_url(), 302, 'Third-Party SDK');
 
             // }
         }
@@ -562,13 +562,15 @@ function get_asset($token)
     $screenshot_key = array();
     $description = array();
     for ($i = 0; $i < count($array); ++$i) {
+
+        $asset_type = $array[$i]['contentType'];
         $deepLinkKeys[] = $array[$i]['deepLinkKey'];
         $asset_name[] = $array[$i]['originalFilename'];
         $screenshot_key[] = $array[$i]['previewLinkKey'];
         $description[] = $array[$i]['description'];
     }
 //    print_r($deepLinkKeys);
-    return [$deepLinkKeys, $asset_name, $screenshot_key, $description];
+    return [$deepLinkKeys, $asset_name, $screenshot_key, $description, $asset_type];
 }
 
 function save_assets($token)
@@ -586,10 +588,10 @@ function save_assets($token)
             $screenshot_key = $key_name[2][$i];
             $description = $key_name[3][$i];
 
-            $output_filename = $key . ".glb";
+            $file_extension = pathinfo($name, PATHINFO_EXTENSION);
+            $output_filename = $key .'.'. $file_extension;
             $name = strtok($name, '.');
 
-//        $host = "https://mediaverse-node.herokuapp.com/deeplink/" . $key . "/download";
             $host = "https://dashboard.mediaverse.atc.gr/dam/deeplink/" . $key . "/download";
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $host);
@@ -644,29 +646,34 @@ function save_assets($token)
             );
             echo "1";
 
+            // Check that folder 'Models' exist and create it if not
+            $dirname = dirname($upload_path . $output_filename);
+            if (!is_dir($dirname))
+            {
+                mkdir($dirname, 0755, true);
+            }
+
             // The following lines write the contents to a file in the same directory (provided permissions etc)
             if (!file_exists($upload_path . $output_filename)) {
 
-                $dirname = dirname($upload_path . $output_filename);
-                if (!is_dir($dirname))
-                {
-                    mkdir($dirname, 0755, true);
-                }
+                // Write asset
                 $fp = fopen($upload_path . $output_filename, 'w');
-
                 fwrite($fp, $result);
                 fclose($fp);
+
                 echo "2";
 
-                $asset_id = vrodos_create_asset_frontend(83, 59, 'archaeology-joker', 0,
-                    $lang_pack, "Comic+Sans+MS", "#000000", "0,90.575,-42.381,-2.008,0,3.142,0,90.575,-42.381");
+                // Add metadata to asset
+                // $asset_id = vrodos_create_asset_frontend(83, 59, 'virtualproduction-joker', 0, $lang_pack, "Comic+Sans+MS", "#000000", "0,90.575,-42.381,-2.008,0,3.142,0,90.575,-42.381");
+                $asset_id = vrodos_create_asset_frontend(null, null, 'virtualproduction-joker', 0, $lang_pack, null, null, null);
 
-                $glbFile_id = vrodos_upload_AssetText($result, 'glb' . $name, $asset_id,
-                    $_FILES, 0);
-//
-                update_post_meta($asset_id, 'vrodos_asset3d_glb', $glbFile_id);
 
-//            $host_screen = "https://mediaverse-node.herokuapp.com/previewlink/" . $screenshot_key . "/download";
+                if ($file_extension == 'glb') {
+                    $glbFile_id = vrodos_upload_AssetText($result, $name, $asset_id, $_FILES, 0);
+                    update_post_meta($asset_id, 'vrodos_asset3d_glb', $glbFile_id);
+                }
+
+
                 $host_screen = "https://dashboard.mediaverse.atc.gr/dam/previewlink/" . $screenshot_key . "/download";
                 $ch_screen = curl_init();
                 curl_setopt($ch_screen, CURLOPT_URL, $host_screen);
@@ -678,9 +685,8 @@ function save_assets($token)
                 curl_setopt($ch_screen, CURLOPT_HEADER, 0);
                 $result_screen = curl_exec($ch_screen);
                 curl_close($ch_screen);
-//            $output_filename_screenshot = $screenshot_key. '.png';
 
-                //save screenshot image in Uploads
+                // Save screenshot image in Uploads
                 $fp = fopen($upload_path . $screenshot_key, 'w');
                 fwrite($fp, $result_screen);
                 fclose($fp);
@@ -692,10 +698,7 @@ function save_assets($token)
                 vrodos_upload_asset_screenshot($final_image, $name, $asset_id);
             }
         }
-
     }
-
-
 
 }
 
