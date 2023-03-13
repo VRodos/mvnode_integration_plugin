@@ -643,9 +643,8 @@ function save_assets($token)
                 "assetDescFormRussianPerception" => ""
             );
             echo "1";
-//        $uploads_url = "D:/forxampp/htdocs/test/wordpress/wp-content/uploads/Models/";
 
-            // the following lines write the contents to a file in the same directory (provided permissions etc)
+            // The following lines write the contents to a file in the same directory (provided permissions etc)
             if (!file_exists($upload_path . $output_filename)) {
 
                 $dirname = dirname($upload_path . $output_filename);
@@ -653,8 +652,7 @@ function save_assets($token)
                 {
                     mkdir($dirname, 0755, true);
                 }
-                $fp = fopen($dirname, 'w');
-
+                $fp = fopen($upload_path . $output_filename, 'w');
 
                 fwrite($fp, $result);
                 fclose($fp);
