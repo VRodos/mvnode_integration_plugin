@@ -711,7 +711,7 @@ function import_projects($token)
 
 							$asset_id = vrodos_create_asset_frontend($assetPGame->term_id, $artifact_cat_id->term_id, $game_slug, null, $lang_pack, null, null, null);
 
-							$glbFile_id = vrodos_upload_AssetText($result, $name, $asset_id, $_FILES, 0);
+							$glbFile_id = vrodos_upload_AssetText($result, $name, $asset_id, $_FILES, 0, $project_id);
 							update_post_meta($asset_id, 'vrodos_asset3d_glb', $glbFile_id);
 
 							$host_screen = "https://dashboard.mediaverse.atc.gr/dam/previewlink/" . $screenshot_key . "/download";
