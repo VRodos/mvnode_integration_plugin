@@ -709,7 +709,7 @@ function import_projects($token)
 							// Add metadata to asset
 							$assetPGame = get_term_by('slug', $game_slug, 'vrodos_asset3d_pgame'); // Link each asset to specific project.
 
-							$asset_id = vrodos_create_asset_frontend($assetPGame->term_id, $artifact_cat_id->term_id, $game_slug, 0, $lang_pack, null, null, null);
+							$asset_id = vrodos_create_asset_frontend($assetPGame->term_id, $artifact_cat_id->term_id, $game_slug, null, $lang_pack, null, null, null);
 
 							$glbFile_id = vrodos_upload_AssetText($result, $name, $asset_id, $_FILES, 0);
 							update_post_meta($asset_id, 'vrodos_asset3d_glb', $glbFile_id);
@@ -735,7 +735,7 @@ function import_projects($token)
 
 							$final_image = 'data:image/png;base64,' . $image_base64Data;
 
-							vrodos_upload_asset_screenshot($final_image, $name, $asset_id);
+							vrodos_upload_asset_screenshot($final_image, $name, $asset_id, $project_id);
 						}
 					}
 				}
