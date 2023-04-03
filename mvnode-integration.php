@@ -2,17 +2,18 @@
 
 /**
  * Plugin Name: MVNode Integration
- * Description: This plugin is required for SSO between the Mediaverse Nodes and the VRodos component
+ * Description: This plugin is required for SSO between Mediaverse Nodes and the VRodos component
  * Version: 4.0
- * Author: Vicky CERTH, Sofia Kostoglou, Anastasios Papazoglou Chalikias, Elias Kouslis
+ * Author: Anastasios Papazoglou Chalikias, Elias Kouslis, Vicky CERTH, Sofia Kostoglou
  * Author URI: https://iti.gr
  **/
 
 
 // 1. Create Registration / Login pages on plugin activation
 const PLUGIN_FILE_PATH = __FILE__;
-register_activation_hook( PLUGIN_FILE_PATH, 'create_mv_register_page_on_activation' );
+//register_activation_hook( PLUGIN_FILE_PATH, 'create_mv_register_page_on_activation' );
 register_activation_hook( PLUGIN_FILE_PATH, 'create_mv_login_page_on_activation' );
+
 function create_mv_register_page_on_activation() {
 	create_new_page_on_activation('[mvnode_registration]');
 }
@@ -27,12 +28,12 @@ function create_new_page_on_activation($type) {
 	$page_title = $type == '[mvnode_login]' ? 'MediaVerse - Login' : 'MediaVerse - Register';
 
 	$page_url = plugin_dir_url( __FILE__ );
-	$logo_url = $page_url .'/assets/mv-logo.png';
+	$logo_url = $page_url .'assets/mv-logo.png';
 
 	$page_content =
 		'<div>
             <div>
-                <img src="'.$logo_url.'" height="320" alt="MediaVerse logo">
+                <img src="'.$logo_url.'" height="160" alt="MediaVerse logo">
             </div>
             <div>
                 '. $type.'
@@ -68,6 +69,8 @@ function registration_form($email, $password, $username, $first_name, $last_name
 
 	if (! is_user_logged_in()) {
 		echo '
+    
+    <h1 style="color: #619e85;">MEDIAVERSE</h1>
     
     <div class="mb-5">If you already have a MediaVerse account, login <a href="'. home_url() .'/mv-login/">here</a></div>
     <form action="' . $_SERVER['REQUEST_URI'] . '" method="post" class="shadow-lg p-3 mb-5 bg-white rounded">
@@ -210,7 +213,10 @@ function mvnode_login_form() {
 	echo '<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
 ';
+
 	$login = (isset($_GET['login'])) ? $_GET['login'] : 0;
+
+	$selected_mv_node = (isset($_GET['node_src'])) ? $_GET['node_src'] : 'https://dashboard.mediaverse.atc.gr';
 
 	switch ($login) {
 		case "failed":
@@ -224,6 +230,12 @@ function mvnode_login_form() {
 			break;
 		case "token_null":
 			echo '<p class="login-msg alert alert-danger" role="alert"><strong>ERROR:</strong> You are not registered at your selected MVNode.</p>';
+			break;
+		case "node_err":
+			echo '<p class="login-msg alert alert-danger" role="alert"><strong>ERROR:</strong> MediaVerse Node not found</p>';
+			break;
+		case "super_err":
+			echo '<p class="login-msg alert alert-danger" role="alert"><strong>ERROR:</strong> MediaVerse Node and WP User not found. It seems you have followed a link that does not exist.</p>';
 			break;
 		case "token_error":
 			echo '<p class="login-msg alert alert-danger" role="alert"><strong>ERROR:</strong> There was an error verifying your TOKEN.</p>';
@@ -239,31 +251,38 @@ function mvnode_login_form() {
                 <a href='. wp_logout_url( home_url()) .' title="Logout">Logout</a>
             </div>';
 
+		// Add server information here
+		echo   '<label for="mv_node">Selected MediaVerse node: </label>
+				<input type="text" id="lname" name="mv_node" value=" " disabled>';
+
 		echo '<div> <form method="post">
                 <input class="mb-5" type="submit" name="btn_assets" value="Click here to import your MediaVerse Projects, including added assets"></form>
               </div>';
 		$current_user = wp_get_current_user();
 
-		$vrtoken = get_user_meta($current_user->ID, 'mvnode_token', true);
+
 
 		if(isset($_POST['btn_assets'])){
-			import_projects($vrtoken);
+			import_projects($current_user);
 		}
 
 	} else {
 		echo '<div class="login-branding">
-                <h1 style="color: #619e85;"><a href="/" class="login-logo" style="text-decoration: none;">MEDIAVERSE</a></h1>
+                <h1 style="color: #619e85;">MEDIAVERSE</h1>
                 <div class="login-desc" style="margin-bottom: 10px;">
                     Use your MediaVerse account to login and experience all the tools, assets and inspirational artworks the project has to offer.
                 </div>
-                <div style="margin-bottom: 10px;">If you are not a Mediaverse user yet, please <span style="color: #619e85; font-weight: 900;"><a href="'. home_url() .'/mv-register/">Register</a></span> first.</div>
             </div>
+            <label for="mv_node"><b>Selected MediaVerse node: </b></label>
+            <input type="text" id="lname" name="mv_node" value="' . $selected_mv_node . '" disabled style="width: 300px;">
             <div class="login-form shadow-lg p-3 mb-5 bg-white rounded">';
+
+		/*<div style="margin-bottom: 10px;">If you are not a Mediaverse user yet, please <span style="color: #619e85; font-weight: 900;"><a href="'. home_url() .'/mv-register/">Register</a></span> first.</div>*/
 		$args = array(
-			'redirect' => home_url('/mv-login/'),
+			'redirect' => home_url('/mv-login/?node_src='.$selected_mv_node),
 			'label_username' => 'E-mail address',
 			'id_username' => 'user',
-			'id_password' => 'pass',
+			'id_password' => 'pass'
 		);
 		wp_login_form($args);
 		echo '</div>';
@@ -295,23 +314,50 @@ function redirect_login_page(){
 }
 //add_action('init', 'redirect_login_page');
 
-function login_failed(){
+function login_failed($username, $error) {
 	$login_page  = home_url('/mv-login/');
 	wp_redirect($login_page . '?login=failed');
 	exit;
 }
-add_action('wp_login_failed', 'login_failed');
+add_action('wp_login_failed', 'login_failed' );
 
 function verify_username_password($user, $email, $password)
 {
 	$login_page = home_url('/mv-login/');
+
 	if ($email == "" || $password == "") {
 		wp_redirect($login_page . "?login=empty");
 		exit;
-	} else {
+	}
 
-		$url = 'https://dashboard.mediaverse.atc.gr/dam/authentication/login';
+	// Check if user exists in WP
+	$is_wp_user = email_exists($email);
 
+	// 1. Check if there is a node url
+	$redir_url = $_POST['redirect_to'] ?? null;
+
+	// 2. Check if node url is valid
+	$node_url = $redir_url ? substr($redir_url, strpos($redir_url, "=") + 1) : null;
+
+	// 3. If node url is invalid then check if WP users exists, then get url from META
+	if (filter_var($node_url, FILTER_VALIDATE_URL) != true) {
+
+		if ($is_wp_user) {
+			$user = get_user_by('email', $email);
+			$user_id = $user->ID;
+
+			// 4b. and there is indeed a node url
+			$node_url = get_user_meta( $user_id, 'mvnode_url' );
+		} else {
+			wp_redirect($login_page . "?login=super_err");
+			exit;
+		}
+	}
+	// 4. If node URL is valid then continue
+	else {
+
+		// Login to MV
+		$url = $node_url.'/dam/authentication/login';
 		$curl = curl_init();
 
 		curl_setopt_array($curl, [
@@ -329,141 +375,62 @@ function verify_username_password($user, $email, $password)
 		]);
 
 		$response = curl_exec($curl);
-
 		$err = curl_error($curl);
 		curl_close($curl);
 
-		if ($err) {
-			echo "cURL Error #:" . $err;
-		} /*else {
-            echo $response;
-        }*/
+		if ($err) { echo "cURL Error #:" . $err; }
 
 		$response_obj = json_decode($response);
+		$mvtoken = $response_obj->token;
 
+		// 2. If MV token exists, then user is registered in MV.
 		$is_mv_user = false;
-		if ($response_obj->token) { // if $response_obj->message then the user is not registered in MV
+		if ($mvtoken) { // if $response_obj->message then the user is not registered in MV
 			$is_mv_user = true;
-		}
-		$is_wp_user = email_exists($email);
-
-		print_r('wp: '.$is_wp_user);
-		print_r('mv: '.$is_mv_user);
-
-		// If not a WordPress AND MediaVerse user then redirect
-		if ( !$is_wp_user && !$is_mv_user) {
-			echo 'ERROR: User not found';
-			wp_redirect($login_page . "?login=failed");
+		} else {
+			echo 'ERROR: Mediaverse user not found';
+			wp_redirect($login_page . "?login=token_null");
 			exit;
 		}
 
-		// is WP user AND not MV user -> Just login to WP
-		// TODO maybe we need to autoregister people in MV BUT we need to have a distinct username too (instead of email only)
-		if ( $is_wp_user && !$is_mv_user) {
+		// 3a. If there is no WP user with credentials, register user!
+		if (!$is_wp_user) {
 
+			$username = strstr($email,'@',true);
+			$n = 3;
+			$random_chars = bin2hex(random_bytes($n));
+
+			$userdata = array(
+				'user_login' => $username.$random_chars,
+				'user_email' => $email,
+				'user_pass' => $password,
+				'role' => 'project_master',
+			);
+
+			$user_id = wp_insert_user($userdata);
+
+		} else
+			// 3b. If user exists, then get user id.
+		{
 			$user = get_user_by('email', $email);
-			//$token = complete_registration($user->user_login, $password, $email, $user->user_nicename, ' - ', '1990-01-01');
-
-			// if (!$token) {
-			wp_clear_auth_cookie();
-			wp_set_current_user($user->data->ID);
-			wp_set_auth_cookie($user->data->ID);
-			wp_safe_redirect(admin_url(), 302, 'Third-Party SDK');
-
-			// }
+			$user_id = $user->ID;
 		}
 
-		// If !WPUser but MV user exists then proceed creating WP user
-		$token_body = json_decode($response);
-		$mvtoken = $token_body->token;
+		// 4. Replace token
+		update_user_meta($user_id, 'mvnode_token', $mvtoken);
 
-		// create user (by getting user) if they don't exist in VRodos
-		$url_user = 'https://dashboard.mediaverse.atc.gr/dam/user';
-		$headers = array(
-			"Accept: application/json",
-			"Authorization: Bearer " . $mvtoken,
-		);
+		// 5. Save node info
+		update_user_meta($user_id, 'mvnode_url', $node_url);
 
-		$curl_user = curl_init();
-
-		curl_setopt_array($curl_user, [
-			CURLOPT_URL => $url_user,
-			CURLOPT_RETURNTRANSFER => true,
-			CURLOPT_ENCODING => "",
-			CURLOPT_MAXREDIRS => 10,
-			CURLOPT_TIMEOUT => 30,
-			CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-			CURLOPT_CUSTOMREQUEST => "GET",
-			CURLOPT_POSTFIELDS => "",
-
-		]);
-		curl_setopt($curl_user, CURLOPT_HTTPHEADER, $headers);
-
-		$response_user = curl_exec($curl_user);
-		$err = curl_error($curl_user);
-
-		curl_close($curl_user);
-
-		// save user info from GET response of get user
-		$user_data = json_decode($response_user);
-		$user_email = $user_data->email;
-		$user_username = $user_data->username;
-		$user_firstname = $user_data->firstname;
-		$user_lastname = $user_data->lastname;
-
-		print_r($user_data);
-
-		$userdata = array(
-			'user_login' => $user_username,
-			'user_email' => $user_email,
-			'user_pass' => $password,
-			'first_name' => $user_firstname,
-			'last_name' => $user_lastname,
-			'role' => 'project_master',
-		);
-
-
-		$user = get_user_by('login', $email);
-		if (!$user) {
-			$user = get_user_by('email', $email);
-			if (!$user) {
-				// if user does not exist in vrodos, create them with mediaverse info
-				$user = wp_insert_user($userdata);
-				// here the token is saved to user data
-				add_user_meta($user, 'mvnode_token', $mvtoken);
-				return $mvtoken;
-			}
+		// TODO 'IF' might be redundant.
+		if ($mvtoken != '') {
+			wp_redirect($login_page);
+			return $mvtoken;
 		}
-//        save_assets($mvtoken);
-
-		$vrtoken = get_user_meta($user->ID, 'mvnode_token', true);
-
-		if ($vrtoken != '' && $mvtoken != '') {
-			if ($mvtoken == $vrtoken) {
-				wp_redirect($login_page . "?mv_token=" . $mvtoken);
-//                save_assets($mvtoken);
-
-				return $mvtoken;
-				exit;
-
-			} else {
-				wp_redirect($login_page . "?login=token_error");
-				exit;
-			}
-		} else {
-			$user_meta = get_userdata($user->ID);
-			$user_roles = $user_meta->roles;
-			if ($user_roles[0] == "administrator") {
-				wp_redirect($login_page . "?login=admin_without_token");
-			} else {
-				wp_redirect($login_page . "?login=token_null");
-				exit;
-			}
-		};
 	}
 }
-add_filter('authenticate', 'verify_username_password',1, 3);
 
+add_filter('authenticate', 'verify_username_password', 10, 3);
 
 // function redirect_on_login($user_login, $user){
 //     $current_user = wp_get_current_user();
@@ -525,10 +492,10 @@ function mvnode_login_shortcode(){
 	return ob_get_clean();
 }
 
-function import_mv_asset($token, $id)
+function import_mv_asset($token, $id, $node_url)
 {
 
-	$url = "https://dashboard.mediaverse.atc.gr/dam/assets/" . $id;
+	$url = $node_url."/dam/assets/" . $id;
 	$curl = curl_init($url);
 	curl_setopt($curl, CURLOPT_URL, $url);
 	curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
@@ -563,11 +530,13 @@ function import_mv_asset($token, $id)
 
 }
 
-function import_projects($token)
+function import_projects($user)
 {
+	$node_url = get_user_meta($user->ID, 'mvnode_url', true);
+	$token = get_user_meta($user->ID, 'mvnode_token', true);
 
 	// 1.a Get projects from MV
-	$url = "https://dashboard.mediaverse.atc.gr/dam/project/userList";
+	$url = $node_url."/dam/project/userList";
 	$curl = curl_init($url);
 	curl_setopt($curl, CURLOPT_URL, $url);
 	curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
@@ -580,6 +549,7 @@ function import_projects($token)
 	curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
 	$resp = curl_exec($curl);
 	curl_close($curl);
+
 
 	$info = json_decode($resp);
 	$array = json_decode($resp, true);
@@ -596,9 +566,10 @@ function import_projects($token)
 
 		$title = 'mv_' . strip_tags($array[$i]['name']);
 		$taxonomy = get_term_by('slug', 'virtualproduction_games', 'vrodos_game_type');
+		$project_type_id = $taxonomy->term_id;
 		$project_taxonomies = array(
 			'vrodos_game_type' => array(
-				$taxonomy->term_id
+				$project_type_id
 			),
 		);
 		$data = array(
@@ -609,21 +580,45 @@ function import_projects($token)
 			'tax_input' => $project_taxonomies,
 		);
 
-		// Create new projects  only if they do not exist
+		// Create new projects only if they do not exist
 		if ( get_page_by_title($data['post_title'], OBJECT, 'vrodos_game') == null ) {
+
+			// Create project
 			$project_id = wp_insert_post($data);
-			wp_set_object_terms(  $project_id , 'virtualproduction_games', 'vrodos_asset3d_pgame' );
+			$post = get_post($project_id);
+
+			// Link project to game type
+			wp_set_object_terms(  $post->ID, 'virtualproduction_games', 'vrodos_game_type' );
+
+			// Create a parent game tax category for the scenes
+			wp_insert_term($post->post_title,'vrodos_scene_pgame', array(
+					'description'=> '-',
+					'slug' => $post->post_name,
+				)
+			);
+
+			// Create a parent game tax category for the assets
+			wp_insert_term($post->post_title,'vrodos_asset3d_pgame',array(
+					'description'=> '-',
+					'slug' => $post->post_name,
+				)
+			);
+
+			vrodos_create_default_scenes_for_game($post->post_name, $project_type_id);
+
+			//wp_set_object_terms(  $project_id , 'virtualproduction_games', 'vrodos_asset3d_pgame' );
+
 			print_r('Created project with id: ' . $project_id);
 			echo '<br>';
 
+
 			// 2. Continue with assets import
-			//  TODO Duplicate detection / handling
 			for ($j = 0; $j< count($asset_ids_arr); ++$j) {
 
 				if(!empty($asset_ids_arr[$j])) {
 
 					// 2.a Get asset entry from MV
-					$asset_result = import_mv_asset($token, $asset_ids_arr[$j]);
+					$asset_result = import_mv_asset($token, $asset_ids_arr[$j], $node_url);
 					if ($asset_result) {
 
 						$key = $asset_result[0][0];
@@ -635,7 +630,7 @@ function import_projects($token)
 						$output_filename = $key .'.'. $file_extension;
 						$name = strtok($name, '.');
 
-						$host = "https://dashboard.mediaverse.atc.gr/dam/deeplink/" . $key . "/download";
+						$host = $node_url."/dam/deeplink/" . $key . "/download";
 						$ch = curl_init();
 						curl_setopt($ch, CURLOPT_URL, $host);
 						curl_setopt($ch, CURLOPT_VERBOSE, 1);
@@ -714,7 +709,7 @@ function import_projects($token)
 							$glbFile_id = vrodos_upload_AssetText($result, $name, $asset_id, $_FILES, 0, $project_id);
 							update_post_meta($asset_id, 'vrodos_asset3d_glb', $glbFile_id);
 
-							$host_screen = "https://dashboard.mediaverse.atc.gr/dam/previewlink/" . $screenshot_key . "/download";
+							$host_screen = $node_url."/dam/previewlink/" . $screenshot_key . "/download";
 							$ch_screen = curl_init();
 							curl_setopt($ch_screen, CURLOPT_URL, $host_screen);
 							curl_setopt($ch_screen, CURLOPT_VERBOSE, 1);
