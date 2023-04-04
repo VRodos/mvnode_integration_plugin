@@ -685,7 +685,7 @@ function import_projects($user)
 
 						if (!is_dir($dirname))
 						{
-							mkdir($dirname, 0755, true);
+							mkdir($dirname, 0777, true);
 						}
 
 						// The following lines write the contents to a file in the same directory (provided permissions etc)
