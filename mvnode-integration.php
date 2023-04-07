@@ -637,7 +637,6 @@ function import_projects($user)
 						curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
 						curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 						curl_setopt($ch, CURLOPT_AUTOREFERER, false);
-						//curl_setopt($ch, CURLOPT_REFERER, "http://www.xcontest.org");
 						curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
 						curl_setopt($ch, CURLOPT_HEADER, 0);
 						$result = curl_exec($ch);
@@ -808,18 +807,3 @@ function validateAge($birthday, $age = 18)
 
 	return true;
 }
-
-//    echo '<a href="#" class="button-primary">My Button</a>';
-//    return $results;
-
-
-//add_shortcode('upload_assets', 'upload_assets_shortcode');
-//
-//function upload_assets_shortcode($token){
-//    ob_start();
-//    save_assets($token);
-//    return ob_get_clean();
-//}
-//
-//
-//add_action('write_to_uploads','save_assets');
