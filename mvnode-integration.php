@@ -246,6 +246,10 @@ function mvnode_login_form() {
 	}
 
 	if (is_user_logged_in()) {
+		$current_user = wp_get_current_user();
+
+		$mv_url = get_user_meta($current_user->ID, 'mvnode_url', true);
+
 		echo '<div class="login-desc" style="margin-bottom: 10px;">
             You are already logged in! <br>
                 <a href='. wp_logout_url( home_url()) .' title="Logout">Logout</a>
@@ -253,13 +257,11 @@ function mvnode_login_form() {
 
 		// Add server information here
 		echo   '<label for="mv_node">Selected MediaVerse node: </label>
-				<input type="text" id="lname" name="mv_node" value=" " disabled>';
+				<input type="text" id="lname" name="mv_node" value="'.$mv_url.'" disabled style="width: 300px;">';
 
 		echo '<div> <form method="post">
                 <input class="mb-5" type="submit" name="btn_assets" value="Click here to import your MediaVerse Projects, including added assets"></form>
               </div>';
-		$current_user = wp_get_current_user();
-
 
 
 		if(isset($_POST['btn_assets'])){
