@@ -494,7 +494,7 @@ function mvnode_login_shortcode(){
 	return ob_get_clean();
 }
 
-function import_mv_asset($token, $id, $node_url)
+function get_mv_asset($token, $id, $node_url)
 {
 
 	$url = $node_url."/dam/assets/" . $id;
@@ -620,7 +620,7 @@ function import_projects($user)
 				if(!empty($asset_ids_arr[$j])) {
 
 					// 2.a Get asset entry from MV
-					$asset_result = import_mv_asset($token, $asset_ids_arr[$j], $node_url);
+					$asset_result = get_mv_asset($token, $asset_ids_arr[$j], $node_url);
 					if ($asset_result) {
 
 						$key = $asset_result[0][0];
