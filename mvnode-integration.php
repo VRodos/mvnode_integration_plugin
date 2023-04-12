@@ -564,16 +564,8 @@ function import_projects($user)
 	// 1.b Create projects in VROdos if they do not exist
 	for ($i = 0; $i < count($array); ++$i) {
 
-		$asset_ids_arr = $array[$i]['assetIds'];
-
+		// Create title and check if project with same title exists
 		$title = 'mv_' . strip_tags($array[$i]['name']);
-		$taxonomy = get_term_by('slug', 'virtualproduction_games', 'vrodos_game_type');
-		$project_type_id = $taxonomy->term_id;
-		$project_taxonomies = array(
-			'vrodos_game_type' => array(
-				$project_type_id
-			),
-		);
 
 		// Custom Query
 		$args = array(
@@ -584,6 +576,17 @@ function import_projects($user)
 
 		// Create new projects only if they do not exist
 		if (!$query) {
+
+			$mv_project_id = $array[$i]['id'];
+			$asset_ids_arr = $array[$i]['assetIds'];
+
+			$taxonomy = get_term_by('slug', 'virtualproduction_games', 'vrodos_game_type');
+			$project_type_id = $taxonomy->term_id;
+			$project_taxonomies = array(
+				'vrodos_game_type' => array(
+					$project_type_id
+				),
+			);
 
 			$data = array(
 				'post_title' => esc_attr($title),
@@ -615,13 +618,16 @@ function import_projects($user)
 				)
 			);
 
+			// Save custom field mv_project_id for WP project, to use when uploading recorded video.
+			update_user_meta($post->ID, 'mv_project_id', $mv_project_id);
+
+			// Create default scenes for each project
 			vrodos_create_default_scenes_for_game($post->post_name, $project_type_id);
 
 			//wp_set_object_terms(  $project_id , 'virtualproduction_games', 'vrodos_asset3d_pgame' );
 
 			print_r('Created project with id: ' . $project_id);
 			echo '<br>';
-
 
 			// 2. Continue with assets import
 			for ($j = 0; $j< count($asset_ids_arr); ++$j) {
