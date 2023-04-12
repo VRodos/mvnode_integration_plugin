@@ -574,16 +574,25 @@ function import_projects($user)
 				$project_type_id
 			),
 		);
-		$data = array(
-			'post_title' => esc_attr($title),
-			'post_content' => '',
-			'post_type' => 'vrodos_game',
-			'post_status' => 'publish',
-			'tax_input' => $project_taxonomies,
+
+		// Custom Query
+		$args = array(
+			'name' => esc_attr($title),
+			'post_type' => 'vrodos_game'
 		);
+		$query = get_posts( $args );
 
 		// Create new projects only if they do not exist
-		if ( get_page_by_title($data['post_title'], OBJECT, 'vrodos_game') == null ) {
+		if (!$query) {
+
+			$data = array(
+				'post_title' => esc_attr($title),
+				'post_name' => esc_attr($title),
+				'post_content' => '',
+				'post_type' => 'vrodos_game',
+				'post_status' => 'publish',
+				'tax_input' => $project_taxonomies,
+			);
 
 			// Create project
 			$project_id = wp_insert_post($data);
