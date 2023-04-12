@@ -626,7 +626,11 @@ function import_projects($user)
 
 			//wp_set_object_terms(  $project_id , 'virtualproduction_games', 'vrodos_asset3d_pgame' );
 
-			print_r('Created project with id: ' . $project_id);
+			print_r('Fetched MediaVerse project with id: ' . $mv_project_id);
+			echo '<br>';
+			print_r('Created project in VROdos with id: ' . $project_id);
+			echo '<br>';
+			print_r('---');
 			echo '<br>';
 
 			// 2. Continue with assets import
