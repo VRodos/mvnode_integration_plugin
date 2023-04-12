@@ -619,7 +619,7 @@ function import_projects($user)
 			);
 
 			// Save custom field mv_project_id for WP project, to use when uploading recorded video.
-			update_user_meta($post->ID, 'mv_project_id', $mv_project_id);
+			update_post_meta($post->ID, 'mv_project_id', $mv_project_id);
 
 			// Create default scenes for each project
 			vrodos_create_default_scenes_for_game($post->post_name, $project_type_id);
