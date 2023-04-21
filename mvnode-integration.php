@@ -552,205 +552,215 @@ function import_projects($user)
 	$resp = curl_exec($curl);
 	curl_close($curl);
 
-
 	$info = json_decode($resp);
 	$array = json_decode($resp, true);
 
-	if(sizeof($array) == 1) {
+
+	if(!is_array($info)) {
+
 		echo '<p class="login-msg alert alert-warning" role="alert">'. $info->message .'</p>';
 		return false;
-	}
 
-	// 1.b Create projects in VROdos if they do not exist
-	for ($i = 0; $i < count($array); ++$i) {
+	} else {
 
-		// Create title and check if project with same title exists
-		$title = 'mv_' . strip_tags($array[$i]['name']);
 
-		// Custom Query
-		$args = array(
-			'name' => esc_attr($title),
-			'post_type' => 'vrodos_game'
-		);
-		$query = get_posts( $args );
+		// 1.b Create projects in VROdos if they do not exist
+		for ($i = 0; $i < count($array); ++$i) {
 
-		// Create new projects only if they do not exist
-		if (!$query) {
+			// Create title and check if project with same title exists
+			$title = 'mv_' . strip_tags($array[$i]['name']);
 
-			$mv_project_id = $array[$i]['id'];
-			$asset_ids_arr = $array[$i]['assetIds'];
-
-			$taxonomy = get_term_by('slug', 'virtualproduction_games', 'vrodos_game_type');
-			$project_type_id = $taxonomy->term_id;
-			$project_taxonomies = array(
-				'vrodos_game_type' => array(
-					$project_type_id
-				),
+			// Custom Query
+			$args = array(
+				'name' => esc_attr($title),
+				'post_type' => 'vrodos_game'
 			);
+			$query = get_posts( $args );
 
-			$data = array(
-				'post_title' => esc_attr($title),
-				'post_name' => esc_attr($title),
-				'post_content' => '',
-				'post_type' => 'vrodos_game',
-				'post_status' => 'publish',
-				'tax_input' => $project_taxonomies,
-			);
 
-			// Create project
-			$project_id = wp_insert_post($data);
-			$post = get_post($project_id);
+			// Create new projects only if they do not exist
+			if (!$query) {
 
-			// Link project to game type
-			wp_set_object_terms(  $post->ID, 'virtualproduction_games', 'vrodos_game_type' );
+				$mv_project_id = $array[$i]['id'];
+				$asset_ids_arr = $array[$i]['assetIds'];
 
-			// Create a parent game tax category for the scenes
-			wp_insert_term($post->post_title,'vrodos_scene_pgame', array(
-					'description'=> '-',
-					'slug' => $post->post_name,
-				)
-			);
+				$taxonomy = get_term_by('slug', 'virtualproduction_games', 'vrodos_game_type');
+				$project_type_id = $taxonomy->term_id;
+				$project_taxonomies = array(
+					'vrodos_game_type' => array(
+						$project_type_id
+					),
+				);
 
-			// Create a parent game tax category for the assets
-			wp_insert_term($post->post_title,'vrodos_asset3d_pgame',array(
-					'description'=> '-',
-					'slug' => $post->post_name,
-				)
-			);
+				$data = array(
+					'post_title' => esc_attr($title),
+					'post_name' => esc_attr($title),
+					'post_content' => '',
+					'post_type' => 'vrodos_game',
+					'post_status' => 'publish',
+					'tax_input' => $project_taxonomies,
+				);
 
-			// Save custom field mv_project_id for WP project, to use when uploading recorded video.
-			update_post_meta($post->ID, 'mv_project_id', $mv_project_id);
 
-			// Create default scenes for each project
-			vrodos_create_default_scenes_for_game($post->post_name, $project_type_id);
 
-			//wp_set_object_terms(  $project_id , 'virtualproduction_games', 'vrodos_asset3d_pgame' );
+				// Create project
+				$project_id = wp_insert_post($data);
+				$post = get_post($project_id);
 
-			print_r('Fetched MediaVerse project with id: ' . $mv_project_id);
-			echo '<br>';
-			print_r('Created project in VROdos with id: ' . $project_id);
-			echo '<br>';
-			print_r('---');
-			echo '<br>';
 
-			// 2. Continue with assets import
-			for ($j = 0; $j< count($asset_ids_arr); ++$j) {
 
-				if(!empty($asset_ids_arr[$j])) {
 
-					// 2.a Get asset entry from MV
-					$asset_result = get_mv_asset($token, $asset_ids_arr[$j], $node_url);
-					if ($asset_result) {
+				// Link project to game type
+				wp_set_object_terms(  $post->ID, 'virtualproduction_games', 'vrodos_game_type' );
 
-						$key = $asset_result[0][0];
-						$name = $asset_result[1][0];
-						$screenshot_key = $asset_result[2][0];
-						$description = $asset_result[3][0];
+				// Create a parent game tax category for the scenes
+				wp_insert_term($post->post_title,'vrodos_scene_pgame', array(
+						'description'=> '-',
+						'slug' => $post->post_name,
+					)
+				);
 
-						$file_extension = pathinfo($name, PATHINFO_EXTENSION);
-						$output_filename = $key .'.'. $file_extension;
-						$name = strtok($name, '.');
+				// Create a parent game tax category for the assets
+				wp_insert_term($post->post_title,'vrodos_asset3d_pgame',array(
+						'description'=> '-',
+						'slug' => $post->post_name,
+					)
+				);
 
-						$host = $node_url."/dam/deeplink/" . $key . "/download";
-						$ch = curl_init();
-						curl_setopt($ch, CURLOPT_URL, $host);
-						curl_setopt($ch, CURLOPT_VERBOSE, 1);
-						curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-						curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-						curl_setopt($ch, CURLOPT_AUTOREFERER, false);
-						curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
-						curl_setopt($ch, CURLOPT_HEADER, 0);
-						$result = curl_exec($ch);
-						curl_close($ch);
+				// Save custom field mv_project_id for WP project, to use when uploading recorded video.
+				update_post_meta($post->ID, 'mv_project_id', $mv_project_id);
 
-						$upload_dir = wp_upload_dir();
-						$DS = DIRECTORY_SEPARATOR;
-						$upload_path = str_replace('/', $DS, $upload_dir['basedir']) . $DS . 'models' . $DS . $project_id . $DS;
-						$lang_pack = array
-						("assetTitleForm" => $name,
-						 "assetDescForm" => "$description",
-						 "assetDescFormKids" => "",
-						 "assetDescFormExperts" => "",
-						 "assetDescFormPerception" => "",
-						 "assetTitleFormGreek" => "",
-						 "assetDescFormGreek" => "",
-						 "assetDescFormGreekKids" => "",
-						 "assetDescFormGreekExperts" => "",
-						 "assetDescFormGreekPerception" => "",
-						 "assetTitleFormSpanish" => "",
-						 "assetDescFormSpanish" => "",
-						 "assetDescFormSpanishKids" => "",
-						 "assetDescFormSpanishExperts" => "",
-						 "assetDescFormSpanishPerception" => "",
-						 "assetTitleFormFrench" => "",
-						 "assetDescFormFrench" => "",
-						 "assetDescFormFrenchKids" => "",
-						 "assetDescFormFrenchExperts" => "",
-						 "assetDescFormFrenchPerception" => "",
-						 "assetTitleFormGerman" => "",
-						 "assetDescFormGerman" => "",
-						 "assetDescFormGermanKids" => "",
-						 "assetDescFormGermanExperts" => "",
-						 "assetDescFormGermanPerception" => "",
-						 "assetTitleFormRussian" => "",
-						 "assetDescFormRussian" => "",
-						 "assetDescFormRussianKids" => "",
-						 "assetDescFormRussianExperts" => "",
-						 "assetDescFormRussianPerception" => ""
-						);
+				// Create default scenes for each project
+				vrodos_create_default_scenes_for_game($post->post_name, $project_type_id);
 
-						// Check that folder 'Models' exist and create it if not
-						// Create subfolders for each Project
-						$dirname = dirname($upload_path . $output_filename);
+				//wp_set_object_terms(  $project_id , 'virtualproduction_games', 'vrodos_asset3d_pgame' );
 
-						if (!is_dir($dirname))
-						{
-							mkdir($dirname, 0777, true);
-						}
+				print_r('Fetched MediaVerse project with id: ' . $mv_project_id);
+				echo '<br>';
+				print_r('Created project in VROdos with id: ' . $project_id);
+				echo '<br>';
+				print_r('---');
+				echo '<br>';
 
-						// The following lines write the contents to a file in the same directory (provided permissions etc)
-						if (!file_exists($upload_path . $output_filename)) {
+				// 2. Continue with assets import
+				for ($j = 0; $j< count($asset_ids_arr); ++$j) {
 
-							// Write asset
-							$fp = fopen($upload_path . $output_filename, 'w');
-							fwrite($fp, $result);
-							fclose($fp);
+					if(!empty($asset_ids_arr[$j])) {
 
-							$artifact_cat_id = get_term_by('slug', 'artifact', 'vrodos_asset3d_cat'); // Choose the type of asset.
+						// 2.a Get asset entry from MV
+						$asset_result = get_mv_asset($token, $asset_ids_arr[$j], $node_url);
+						if ($asset_result) {
 
-							$game_entry = get_post($project_id); // Get project slug
-							$game_slug = $game_entry->post_name;
+							$key = $asset_result[0][0];
+							$name = $asset_result[1][0];
+							$screenshot_key = $asset_result[2][0];
+							$description = $asset_result[3][0];
 
-							// Add metadata to asset
-							$assetPGame = get_term_by('slug', $game_slug, 'vrodos_asset3d_pgame'); // Link each asset to specific project.
+							$file_extension = pathinfo($name, PATHINFO_EXTENSION);
+							$output_filename = $key .'.'. $file_extension;
+							$name = strtok($name, '.');
 
-							$asset_id = vrodos_create_asset_frontend($assetPGame->term_id, $artifact_cat_id->term_id, $game_slug, null, $lang_pack, null, null, null);
+							$host = $node_url."/dam/deeplink/" . $key . "/download";
+							$ch = curl_init();
+							curl_setopt($ch, CURLOPT_URL, $host);
+							curl_setopt($ch, CURLOPT_VERBOSE, 1);
+							curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+							curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+							curl_setopt($ch, CURLOPT_AUTOREFERER, false);
+							curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+							curl_setopt($ch, CURLOPT_HEADER, 0);
+							$result = curl_exec($ch);
+							curl_close($ch);
 
-							$glbFile_id = vrodos_upload_AssetText($result, $name, $asset_id, $_FILES, 0, $project_id);
-							update_post_meta($asset_id, 'vrodos_asset3d_glb', $glbFile_id);
+							$upload_dir = wp_upload_dir();
+							$DS = DIRECTORY_SEPARATOR;
+							$upload_path = str_replace('/', $DS, $upload_dir['basedir']) . $DS . 'models' . $DS . $project_id . $DS;
+							$lang_pack = array
+							("assetTitleForm" => $name,
+							 "assetDescForm" => "$description",
+							 "assetDescFormKids" => "",
+							 "assetDescFormExperts" => "",
+							 "assetDescFormPerception" => "",
+							 "assetTitleFormGreek" => "",
+							 "assetDescFormGreek" => "",
+							 "assetDescFormGreekKids" => "",
+							 "assetDescFormGreekExperts" => "",
+							 "assetDescFormGreekPerception" => "",
+							 "assetTitleFormSpanish" => "",
+							 "assetDescFormSpanish" => "",
+							 "assetDescFormSpanishKids" => "",
+							 "assetDescFormSpanishExperts" => "",
+							 "assetDescFormSpanishPerception" => "",
+							 "assetTitleFormFrench" => "",
+							 "assetDescFormFrench" => "",
+							 "assetDescFormFrenchKids" => "",
+							 "assetDescFormFrenchExperts" => "",
+							 "assetDescFormFrenchPerception" => "",
+							 "assetTitleFormGerman" => "",
+							 "assetDescFormGerman" => "",
+							 "assetDescFormGermanKids" => "",
+							 "assetDescFormGermanExperts" => "",
+							 "assetDescFormGermanPerception" => "",
+							 "assetTitleFormRussian" => "",
+							 "assetDescFormRussian" => "",
+							 "assetDescFormRussianKids" => "",
+							 "assetDescFormRussianExperts" => "",
+							 "assetDescFormRussianPerception" => ""
+							);
 
-							$host_screen = $node_url."/dam/previewlink/" . $screenshot_key . "/download";
-							$ch_screen = curl_init();
-							curl_setopt($ch_screen, CURLOPT_URL, $host_screen);
-							curl_setopt($ch_screen, CURLOPT_VERBOSE, 1);
-							curl_setopt($ch_screen, CURLOPT_FOLLOWLOCATION, true);
-							curl_setopt($ch_screen, CURLOPT_RETURNTRANSFER, 1);
-							curl_setopt($ch_screen, CURLOPT_AUTOREFERER, false);
-							curl_setopt($ch_screen, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
-							curl_setopt($ch_screen, CURLOPT_HEADER, 0);
-							$result_screen = curl_exec($ch_screen);
-							curl_close($ch_screen);
+							// Check that folder 'Models' exist and create it if not
+							// Create subfolders for each Project
+							$dirname = dirname($upload_path . $output_filename);
 
-							// Save screenshot image in Uploads
-							$fp = fopen($upload_path . $screenshot_key, 'w');
-							fwrite($fp, $result_screen);
-							fclose($fp);
-							$image_content = file_get_contents($upload_path . $screenshot_key);
-							$image_base64Data = base64_encode($image_content);
+							if (!is_dir($dirname))
+							{
+								mkdir($dirname, 0777, true);
+							}
 
-							$final_image = 'data:image/png;base64,' . $image_base64Data;
+							// The following lines write the contents to a file in the same directory (provided permissions etc)
+							if (!file_exists($upload_path . $output_filename)) {
 
-							vrodos_upload_asset_screenshot($final_image, $name, $asset_id, $project_id);
+								// Write asset
+								$fp = fopen($upload_path . $output_filename, 'w');
+								fwrite($fp, $result);
+								fclose($fp);
+
+								$artifact_cat_id = get_term_by('slug', 'artifact', 'vrodos_asset3d_cat'); // Choose the type of asset.
+
+								$game_entry = get_post($project_id); // Get project slug
+								$game_slug = $game_entry->post_name;
+
+								// Add metadata to asset
+								$assetPGame = get_term_by('slug', $game_slug, 'vrodos_asset3d_pgame'); // Link each asset to specific project.
+
+								$asset_id = vrodos_create_asset_frontend($assetPGame->term_id, $artifact_cat_id->term_id, $game_slug, null, $lang_pack, null, null, null);
+
+								$glbFile_id = vrodos_upload_AssetText($result, $name, $asset_id, $_FILES, 0, $project_id);
+								update_post_meta($asset_id, 'vrodos_asset3d_glb', $glbFile_id);
+
+								$host_screen = $node_url."/dam/previewlink/" . $screenshot_key . "/download";
+								$ch_screen = curl_init();
+								curl_setopt($ch_screen, CURLOPT_URL, $host_screen);
+								curl_setopt($ch_screen, CURLOPT_VERBOSE, 1);
+								curl_setopt($ch_screen, CURLOPT_FOLLOWLOCATION, true);
+								curl_setopt($ch_screen, CURLOPT_RETURNTRANSFER, 1);
+								curl_setopt($ch_screen, CURLOPT_AUTOREFERER, false);
+								curl_setopt($ch_screen, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+								curl_setopt($ch_screen, CURLOPT_HEADER, 0);
+								$result_screen = curl_exec($ch_screen);
+								curl_close($ch_screen);
+
+								// Save screenshot image in Uploads
+								$fp = fopen($upload_path . $screenshot_key, 'w');
+								fwrite($fp, $result_screen);
+								fclose($fp);
+								$image_content = file_get_contents($upload_path . $screenshot_key);
+								$image_base64Data = base64_encode($image_content);
+
+								$final_image = 'data:image/png;base64,' . $image_base64Data;
+
+								vrodos_upload_asset_screenshot($final_image, $name, $asset_id, $project_id);
+							}
 						}
 					}
 				}
