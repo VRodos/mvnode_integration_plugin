@@ -220,7 +220,7 @@ function mvnode_login_form() {
 
 	switch ($login) {
 		case "failed":
-			echo '<p class="login-msg alert alert-danger" role="alert"><strong>ERROR:</strong> Invalid username and/or password.</p>';
+			//echo '<p class="login-msg alert alert-danger" role="alert"><strong>ERROR:</strong> Invalid username and/or password.</p>';
 			break;
 		case "empty":
 			echo '<p class="login-msg alert alert-danger" role="alert"><strong>ERROR:</strong> Username and/or Password is empty.</p>';
@@ -229,7 +229,7 @@ function mvnode_login_form() {
 			echo '<p class="login-msg alert alert-warning" role="alert"> You are logged out.</p>';
 			break;
 		case "token_null":
-			echo '<p class="login-msg alert alert-danger" role="alert"><strong>ERROR:</strong> You are not registered at your selected MVNode.</p>';
+			echo '<p class="login-msg alert alert-danger" role="alert"><strong>ERROR:</strong> Could not log you in. Check your credentials!</p>';
 			break;
 		case "node_err":
 			echo '<p class="login-msg alert alert-danger" role="alert"><strong>ERROR:</strong> MediaVerse Node not found</p>';
