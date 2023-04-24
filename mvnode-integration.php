@@ -251,12 +251,12 @@ function mvnode_login_form() {
 		$mv_url = get_user_meta($current_user->ID, 'mvnode_url', true);
 
 		echo '<div class="login-desc" style="margin-bottom: 10px;">
-            You are already logged in! <br>
+            You are logged in! <br>
                 <a href='. wp_logout_url( home_url()) .' title="Logout">Logout</a>
             </div>';
 
 		// Add server information here
-		echo   '<label for="mv_node">Selected MediaVerse node: </label>
+		echo   '<label for="mv_node"><b>Selected MediaVerse node: </b></label>
 				<input type="text" id="lname" name="mv_node" value="'.$mv_url.'" disabled style="width: 300px;">';
 
 		echo '<div> <form method="post">
@@ -460,14 +460,15 @@ function mv_login_redirect($url, $request, $user){
 
 		if ($user->has_cap('administrator')) {
 			if ($vrtoken != null) {
-				$url = $login_page. '?mv_token='. $vrtoken;
+				/*$url = $login_page. '?mv_token='. $vrtoken;*/
+				$url = $login_page;
 			}else{
 				$url = admin_url();
 			}
 		} else {
 			if ($vrtoken != null) {
-				$url = $login_page . '?mv_token=' . $vrtoken;
-
+				/*$url = $login_page . '?mv_token=' . $vrtoken;*/
+				$url = $login_page;
 			} else {
 				$url = home_url() . '?mv_token=empty';
 			}
