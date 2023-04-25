@@ -216,7 +216,7 @@ function mvnode_login_form() {
 
 	$login = (isset($_GET['login'])) ? $_GET['login'] : 0;
 
-	$selected_mv_node = (isset($_GET['node_src'])) ? $_GET['node_src'] : 'https://dashboard.mediaverse.atc.gr';
+	$selected_mv_node = (isset($_GET['node_src'])) ? $_GET['node_src'] : '';
 
 	switch ($login) {
 		case "failed":
