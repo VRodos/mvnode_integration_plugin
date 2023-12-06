@@ -728,7 +728,7 @@ function import_projects($user)
 
 								$final_image = 'data:image/png;base64,' . $image_base64Data;
 
-								vrodos_upload_asset_screenshot($final_image, $name, $asset_id, $project_id);
+								vrodos_upload_asset_screenshot($final_image, $asset_id, $project_id);
 							}
 						}
 					}
