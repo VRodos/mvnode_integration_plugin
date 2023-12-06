@@ -773,7 +773,7 @@ function complete_registration($username, $password, $email, $first_name, $last_
 			'user_pass'     =>   $password,
 			'first_name'    =>   $first_name,
 			'last_name'     =>   $last_name,
-			'role' => 'project_master',
+			'role' => 'adminstrator',
 		);
 
 		$user = wp_insert_user($userdata);
